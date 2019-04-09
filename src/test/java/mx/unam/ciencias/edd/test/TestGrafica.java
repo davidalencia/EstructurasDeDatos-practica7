@@ -269,6 +269,8 @@ public class TestGrafica {
      * Prueba unitaria para {@link Grafica#esConexa}.
      */
     @Test public void testEsConexa() {
+        if (total < 6)
+            total += 6;
         grafica.agrega(0);
         for (int i = 1; i < total; i++) {
             grafica.agrega(i);
@@ -276,6 +278,21 @@ public class TestGrafica {
             grafica.conecta(i-1, i);
             Assert.assertTrue(grafica.esConexa());
         }
+        grafica.limpia();
+        for (int i = 0; i < total/2; i++)
+            grafica.agrega(i);
+        for (int i = 0; i < total/2; i++)
+            for (int j = i+1; j < total/2; j++)
+                grafica.conecta(i, j);
+        Assert.assertTrue(grafica.esConexa());
+        for (int i = total/2; i < total; i++)
+            grafica.agrega(i);
+        for (int i = total/2; i < total; i++)
+            for (int j = i+1; j < total; j++)
+                grafica.conecta(i, j);
+        Assert.assertFalse(grafica.esConexa());
+        grafica.conecta(total/2-1, total/2);
+        Assert.assertTrue(grafica.esConexa());
     }
 
    /**
