@@ -17,11 +17,13 @@ public class MonticuloMinimo<T extends ComparableIndexable<T>>
 
         /* Nos dice si hay un siguiente elemento. */
         @Override public boolean hasNext() {
-            return indice < (elementos-1);
+            return indice < elementos;
         }
 
         /* Regresa el siguiente elemento. */
         @Override public T next() {
+            if(indice >= elementos)
+              throw new NoSuchElementException();
             return arbol[indice++];
         }
     }
@@ -107,9 +109,8 @@ public class MonticuloMinimo<T extends ComparableIndexable<T>>
           e.setIndice(elementos);
           elementos++;
         }
-        for(int teta = n/2; teta>=0; teta--){
+        for(int teta = n/2; teta>=0; teta--)
           acomodaAbajo(teta);
-        }
     }
 
     /**
@@ -117,6 +118,16 @@ public class MonticuloMinimo<T extends ComparableIndexable<T>>
      * @param elemento el elemento a agregar en el montículo.
      */
     @Override public void agrega(T elemento) {
+        if(elementos==arbol.length){
+          T[] arbolViejo = arbol;
+          arbol = nuevoArreglo(elementos+100);
+          elementos = 0;
+          for (T e: arbolViejo){
+            arbol[elementos] = e;
+            e.setIndice(elementos);
+            elementos++;
+          }
+        }
         arbol[elementos] = elemento;
         elemento.setIndice(elementos);
         reordena(elemento);
@@ -129,10 +140,14 @@ public class MonticuloMinimo<T extends ComparableIndexable<T>>
      * @throws IllegalStateException si el montículo es vacío.
      */
     @Override public T elimina() {
+      if(elementos<1)
+        throw new IllegalStateException();
       elementos--;
       T r = arbol[0];
-      arbol[0] = arbol[elementos];
-      arbol[elementos] = null;
+      swap(0, elementos);
+      arbol[elementos]=null;
+      reordena(0);
+      r.setIndice(-1);
       return r;
     }
 
@@ -145,8 +160,12 @@ public class MonticuloMinimo<T extends ComparableIndexable<T>>
       if(i>=elementos || i <0)
         return;
       elementos--;
-      arbol[i] = arbol[elementos];
-      arbol[elementos] = null;
+      swap(i, elementos);
+      arbol[elementos]=null;
+      if(arbol[i]!=null)
+        reordena(i);
+
+      elemento.setIndice(-1);
     }
 
     /**
@@ -156,11 +175,12 @@ public class MonticuloMinimo<T extends ComparableIndexable<T>>
      *         <code>false</code> en otro caso.
      */
     @Override public boolean contiene(T elemento) {
-      int alfa = -1;
-      while(!arbol[++alfa].equals(elemento));
-      if(alfa<elementos)
-        return true;
-      return false;
+      return contiene(0, elemento);
+    }
+    private boolean contiene(int i, T e){
+      if(i==elementos)
+        return false;
+      return arbol[i].equals(e)? true: contiene(++i, e);
     }
 
     /**
@@ -178,6 +198,7 @@ public class MonticuloMinimo<T extends ComparableIndexable<T>>
     @Override public void limpia() {
         for (int alfa = 0; alfa<elementos; alfa++)
           arbol[alfa]=null;
+        elementos = 0;
     }
 
    /**
@@ -188,19 +209,8 @@ public class MonticuloMinimo<T extends ComparableIndexable<T>>
         reordena(elemento.getIndice());
     }
     private void reordena(int i){
-      /*int padre = (i-1)/2;
-      if(arbol[i].compareTo(arbol[padre])<=0){
-        System.out.println(arbol[i]);
-        System.out.println(arbol[padre]);
-        System.out.println(".....................................");
-        return;
-      }
-      T e = arbol[padre];
-      arbol[i].setIndice(e.getIndice());
-      arbol[padre].setIndice(i);
-      arbol[padre] = arbol[i];
-      arbol[i] = e;
-      reordena(padre);*/
+      acomodaArriba(i);
+      acomodaAbajo(i);
     }
 
     /**
@@ -229,7 +239,10 @@ public class MonticuloMinimo<T extends ComparableIndexable<T>>
      * @return una representación en cadena del montículo mínimo.
      */
     @Override public String toString() {
-        return "";
+      String s = "";
+      for (int alfa = 0; alfa<elementos; alfa++)
+        s += String.format("%s, ", arbol[alfa].toString());
+      return s;
     }
 
     /**
@@ -243,7 +256,13 @@ public class MonticuloMinimo<T extends ComparableIndexable<T>>
             return false;
         @SuppressWarnings("unchecked") MonticuloMinimo<T> monticulo =
             (MonticuloMinimo<T>)objeto;
-        return false;
+        if(elementos!=monticulo.elementos)
+          return false;
+        for (int alfa = 0; alfa<elementos; alfa++)
+          if(!arbol[alfa].equals(monticulo.arbol[alfa]))
+            return false;
+        return true;
+
     }
 
     /**
@@ -263,21 +282,29 @@ public class MonticuloMinimo<T extends ComparableIndexable<T>>
      */
     public static <T extends Comparable<T>>
     Lista<T> heapSort(Coleccion<T> coleccion) {
-        return new Lista<T>();
+        MonticuloMinimo<Adaptador<T>> mm = new MonticuloMinimo<>();
+        for (T e: coleccion)
+          mm.agrega(new Adaptador<>(e));
+
+        Lista<T> l = new Lista<T>();
+        for (int alfa = 0; alfa<coleccion.getElementos(); alfa++)
+          l.agrega(mm.elimina().elemento);
+
+        return l;
     }
 
     private void acomodaAbajo(int i){
       if(i>=elementos)
         return;
       int izq = 2*i+1;
-      int der = 2*1+2;
+      int der = 2*i+2;
       boolean vsIzq = false, vsDer = false, izqVsDer = false;
       if(izq<elementos)
-        vsIzq = arbol[i].compareTo(arbol[izq])>0;
+        vsIzq = arbol[i].compareTo(arbol[izq])>=0;
       if(der<elementos)
-        vsDer = arbol[i].compareTo(arbol[der])>0;
+        vsDer = arbol[i].compareTo(arbol[der])>=0;
       if(izq<elementos && der<elementos)
-        izqVsDer = arbol[izq].compareTo(arbol[der]) >0;
+        izqVsDer = arbol[izq].compareTo(arbol[der])>=0;
       if(vsIzq && vsDer)
         if(izqVsDer){
           swap(i, der);
@@ -295,6 +322,13 @@ public class MonticuloMinimo<T extends ComparableIndexable<T>>
         swap(i, der);
         acomodaAbajo(der);
       }
+    }
+    private void acomodaArriba(int i){
+      int padre = (i-1)/2;
+      if(i<=0 || padre<0 || padre >= elementos || arbol[i].compareTo(arbol[padre])>=0)
+        return;
+      swap(i, padre);
+      acomodaArriba(padre);
     }
     private void swap(int i, int j){
       arbol[i].setIndice(j);
