@@ -37,6 +37,10 @@ public class TestMonticuloArreglo {
         for (int i = 0; i < monticulo.getElementos(); i++) {
             T e1 = monticulo.get(i);
             T e2 = arreglo[i];
+            if(e1!=e2){
+              System.out.println(e1);
+              System.out.println(e2);
+            }
             Assert.assertTrue(e1 == e2);
             if (e1 != null) {
                 Assert.assertTrue(e1.getIndice() == i);
@@ -103,7 +107,7 @@ public class TestMonticuloArreglo {
             Assert.assertTrue(monticulo.getElementos() == --total);
         }
         try {
-            monticulo.elimina();
+            System.out.println(monticulo.elimina());
             Assert.fail();
         } catch (IllegalStateException ise) {}
         for (int i = 0; i < arreglo.length; i++)
